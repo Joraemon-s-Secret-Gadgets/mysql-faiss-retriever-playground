@@ -44,17 +44,19 @@ class HybridRetriever(BaseRetriever):
         # LangChain의 similarity_search_with_score는 내부적으로 쿼리 벡터를 정규화하여 검색함
         docs_and_scores = self.vectorstore.similarity_search_with_score(query, k=self.initial_k)
         
-        score_map = {int(doc.page_content): float(score) for doc, score in docs_and_scores}
+        # 이력서 유사도 점수와 자소서 평가 점수를 하나의 map으로 관리
+        score_map = {int(doc.page_content): (doc.metadata.get('selfintro_score', 0) , float(score)) for doc, score in docs_and_scores}
         
         # 2. Peer-First (Grade 기반) 필터링: 상 -> 중 순서로 정렬
+        # 우선 '상' 등급만 적재했으므로 제외
         candidates = [doc for doc,_ in docs_and_scores]
-        high_grade = [d for d in candidates if d.metadata['grade'] == 'high']
-        mid_grade = [d for d in candidates if d.metadata['grade'] == 'mid']
+        #high_grade = [d for d in candidates if d.metadata['grade'] == 'high']
+        #mid_grade = [d for d in candidates if d.metadata['grade'] == 'mid']
         
         # 최종적으로 우리가 원하는 개수(top_n)만큼 ID 선별
-        final_candidate_docs = (high_grade + mid_grade)[:self.top_n]
+        #final_candidate_docs = (high_grade + mid_grade)[:self.top_n]
+        final_candidate_docs = candidates[:self.top_n]
         target_db_ids = [int(d.page_content) for d in final_candidate_docs]
-        print(target_db_ids)
         # 3. MySQL에서 '진짜 자소서 본문' 페치
         return self._fetch_final_documents(target_db_ids, score_map)
 
@@ -68,8 +70,8 @@ class HybridRetriever(BaseRetriever):
             format_strings = ','.join(['%s'] * len(db_ids))
             # content_json(원본)과 grade를 가져옴
             sql = f"""
-            SELECT id, selfintro, grade
-            FROM application_records
+            SELECT id, selfintro
+            FROM applicant_records
             WHERE id IN ({format_strings})
             """
             cursor.execute(sql, tuple(db_ids))
@@ -89,9 +91,9 @@ class HybridRetriever(BaseRetriever):
                         page_content=record['selfintro'], 
                         metadata={
                             "id": db_id,
-                            "grade": record['grade'],      # 메타데이터 키는 일관성을 위해 'grade' 유지 가능
+                            "selfintro_score": score_map.get(db_id)[0],      # 자소서 평가 점수 (최대 60점) 
                             #"eval": record['selfintro_evaluation'], # 평가 의견
-                            "relevance_score": score_map.get(db_id)  # 리트리버가 계산한 유사도 점수
+                            "relevance_score": score_map.get(db_id)[1]  # 리트리버가 계산한 유사도 점수
                         }
                     )
                     final_docs.append(doc)

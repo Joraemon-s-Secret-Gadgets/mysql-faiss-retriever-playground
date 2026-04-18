@@ -30,7 +30,7 @@ class FAISSIndexBuilder:
                 # TiDB 혹은 VECTOR 타입을 지원하는 환경에 맞춘 SQL
                 sql = """
                     SELECT r.id, r.grade, VECTOR_TO_STRING(v.embedding) as embedding_str
-                    FROM application_records r
+                    FROM applicant_records r
                     JOIN resume_vectors v ON r.id = v.record_id
                 """
                 cursor.execute(sql)
@@ -48,8 +48,7 @@ class FAISSIndexBuilder:
 
                 for r in tqdm(rows, desc="Parsing"):
                     metadatas.append({
-                        #"db_id": r['id'],
-                        "grade": r['grade']
+                        "selfintro_score": r['selfintro_score']
                     })
                     ids.append(str(r['id']))
                     
