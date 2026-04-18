@@ -164,7 +164,7 @@ class DataProcessor:
         data_df = self._extract_selfintro_score(data_df, raw_datset['selfintro_score'])
         data_df = self._extract_grade(data_df, raw_datset['selfintro_grade'])
         data_df = data_df.dropna(how = 'any')
-        data_df = data_df[data_df['selfintro_grade'] != 'low'] # low 등급은 제거  
+        data_df = data_df[data_df['selfintro_grade'] == 'high'] # high 등급만 적재  
         
         return data_df
 

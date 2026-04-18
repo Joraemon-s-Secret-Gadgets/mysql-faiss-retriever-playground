@@ -21,6 +21,8 @@ def get_mysql_db_config() -> dict:
     'user': get_env('USER'),
     'password': get_env('PASSWORD'),
     'db': get_env('DB'),
+    # "ssl_ca": "./CERTIFICATE_NAME.crt", #only for TiDB
+    #"ssl_verify_cert": True, #only for TiDB
     'charset': 'utf8mb4'
     }
     

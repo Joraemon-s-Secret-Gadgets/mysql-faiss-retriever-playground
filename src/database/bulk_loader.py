@@ -52,7 +52,7 @@ class JobPocketBulkLoader:
         ]]
         app_data = list(applicants.itertuples(index=False, name=None)) #원래 applicant_tables임
         app_sql = """
-            INSERT IGNORE INTO application_records
+            INSERT IGNORE INTO applicant_records
             (id, jobpost_id, resume_cleaned, selfintro, selfintro_evaluation, selfintro_score, grade)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
